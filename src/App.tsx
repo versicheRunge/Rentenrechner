@@ -1,4 +1,5 @@
 // src/App.tsx
+// KORRIGIERTE VERSION
 
 import React, { useState } from 'react';
 import { UserInput, CalculationResult, Einkunft } from './config';
@@ -16,14 +17,28 @@ const EingabeFormular: React.FC<{ onCalculate: (data: UserInput) => void }> = ({
         setEinkuenfte([...einkuenfte, { id: Date.now().toString(), art: 'bAV', betrag: 300 }]);
     };
 
-    const handleEinkunftChange = (id: string, field: keyof Einkunft, value: any) => {
-        setEinkuenfte(einkuenfte.map(e => e.id === id ? { ...e, [field]: value } : e));
+    // KORRIGIERTE FUNKTION: Diese Funktion stellt sicher, dass die Typen immer stimmen.
+    const handleEinkunftChange = (id: string, field: keyof Einkunft, value: string) => {
+        setEinkuenfte(einkuenfte.map(e => {
+            if (e.id === id) {
+                if (field === 'betrag') {
+                    // Wandelt den Text-Input sofort in eine Zahl um. Ein leeres Feld wird zu 0.
+                    return { ...e, [field]: Number(value) || 0 };
+                }
+                if (field === 'art') {
+                    // Stellt sicher, dass der Wert als korrekter Typ für 'art' behandelt wird.
+                    return { ...e, [field]: value as Einkunft['art'] };
+                }
+            }
+            return e;
+        }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // Die Umwandlung in eine Zahl ist hier nicht mehr nötig, da sie schon im State korrekt ist.
         onCalculate({
-            einkuenfte: einkuenfte.map(e => ({...e, betrag: Number(e.betrag)})),
+            einkuenfte,
             istVerheiratet,
             hatKinder,
             istInGKV,
@@ -37,7 +52,6 @@ const EingabeFormular: React.FC<{ onCalculate: (data: UserInput) => void }> = ({
             <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Persönliche Angaben</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Weitere Felder wie Renteneintritt, Verheiratet etc. */}
                     <label className="block">Renteneintrittsjahr:
                         <input type="number" value={renteneintrittsjahr} onChange={e => setRenteneintrittsjahr(parseInt(e.target.value))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"/>
                     </label>
@@ -50,7 +64,7 @@ const EingabeFormular: React.FC<{ onCalculate: (data: UserInput) => void }> = ({
             </div>
             <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Monatliche Brutto-Einkünfte im Ruhestand</h3>
-                {einkuenfte.map((e, index) => (
+                {einkuenfte.map((e) => (
                     <div key={e.id} className="flex items-center gap-2 mb-2">
                         <select value={e.art} onChange={ev => handleEinkunftChange(e.id, 'art', ev.target.value)} className="rounded-md border-gray-300 shadow-sm">
                             <option value="GRV">Gesetzl. Rente</option>
@@ -71,7 +85,7 @@ const EingabeFormular: React.FC<{ onCalculate: (data: UserInput) => void }> = ({
     );
 };
 
-// --- Ergebnis-Dashboard Komponente ---
+// --- Ergebnis-Dashboard Komponente (unverändert) ---
 const ErgebnisDashboard: React.FC<{ ergebnis: CalculationResult | null; nettoBedarf: number }> = ({ ergebnis, nettoBedarf }) => {
     const [detailsAnzeigen, setDetailsAnzeigen] = useState(false);
 
@@ -130,10 +144,10 @@ const ErgebnisDashboard: React.FC<{ ergebnis: CalculationResult | null; nettoBed
 };
 
 
-// --- Haupt-App ---
+// --- Haupt-App (unverändert) ---
 function App() {
     const [ergebnis, setErgebnis] = useState<CalculationResult | null>(null);
-    const nettoBedarf = 2500; // Könnte auch ein Eingabefeld sein
+    const [nettoBedarf, setNettoBedarf] = useState(2500);
 
     const handleBerechnung = (data: UserInput) => {
         const result = berechneNettoRente(data);
@@ -148,6 +162,16 @@ function App() {
                     <p className="text-lg text-gray-600 mt-2">Ermitteln Sie präzise Ihre finanzielle Situation im Ruhestand.</p>
                 </header>
                 <main>
+                    <div className="p-6 bg-gray-50 rounded-lg shadow-md mb-8">
+                        <label className="block text-lg font-semibold text-gray-800 mb-2">Ihr monatlicher Netto-Bedarf im Ruhestand:
+                            <input 
+                                type="number" 
+                                value={nettoBedarf} 
+                                onChange={e => setNettoBedarf(Number(e.target.value))} 
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                            />
+                        </label>
+                    </div>
                     <EingabeFormular onCalculate={handleBerechnung} />
                     <ErgebnisDashboard ergebnis={ergebnis} nettoBedarf={nettoBedarf} />
                 </main>
