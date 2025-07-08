@@ -19,10 +19,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Unsere neuen Regeln */
+    /* Unsere Regeln für JS-Dateien */
     "allowJs": true,
     "checkJs": true
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }
